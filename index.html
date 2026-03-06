@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Particle Gesture System</title>
+<title>Gesture Particle System</title>
 
 <style>
 
 body{
 margin:0;
 overflow:hidden;
-background:black;
+background:#050505;
 font-family:Arial;
 }
 
@@ -17,15 +17,24 @@ font-family:Arial;
 position:absolute;
 top:15px;
 left:15px;
-background:rgba(0,0,0,0.5);
+width:200px;
 padding:15px;
-border-radius:10px;
+background:rgba(0,0,0,0.5);
+border-radius:12px;
 color:white;
+backdrop-filter:blur(12px);
 }
 
-button,input{
+select,input,button{
+width:100%;
 margin-top:8px;
-width:150px;
+padding:6px;
+border:none;
+border-radius:6px;
+}
+
+button{
+cursor:pointer;
 }
 
 </style>
@@ -35,10 +44,19 @@ width:150px;
 
 <div id="ui">
 
-<label>Color partículas</label><br>
-<input type="color" id="colorPicker" value="#00ffff"><br>
+<label>Color partículas</label>
+<input type="color" id="colorPicker" value="#00ffff">
 
-<button onclick="fullscreen()">Pantalla completa</button>
+<label>Patrón</label>
+<select id="pattern">
+<option value="sphere">Sphere</option>
+<option value="galaxy">Galaxy</option>
+<option value="heart">Heart</option>
+<option value="spiral">Spiral</option>
+<option value="cube">Cube</option>
+</select>
+
+<button onclick="fullscreen()">Fullscreen</button>
 
 </div>
 
@@ -50,7 +68,7 @@ width:150px;
 
 <script>
 
-/* ESCENA THREEJS */
+/* THREEJS SCENE */
 
 const scene = new THREE.Scene()
 
@@ -61,33 +79,93 @@ window.innerWidth/window.innerHeight,
 1000
 )
 
-camera.position.z = 5
+camera.position.z = 6
 
 const renderer = new THREE.WebGLRenderer({antialias:true})
-
 renderer.setSize(window.innerWidth,window.innerHeight)
-
 document.body.appendChild(renderer.domElement)
 
 
-/* PARTICULAS */
+/* PARTICLES */
 
-const particleCount = 8000
+const PARTICLES = 20000
 
-const geometry = new THREE.BufferGeometry()
+let geometry = new THREE.BufferGeometry()
+let positions = new Float32Array(PARTICLES*3)
 
-const positions = new Float32Array(particleCount*3)
+function generatePattern(type){
 
-for(let i=0;i<particleCount*3;i++){
+for(let i=0;i<PARTICLES;i++){
 
-positions[i] = (Math.random()-0.5)*4
+let x,y,z
+
+if(type==="sphere"){
+
+let r = Math.random()*3
+let theta = Math.random()*Math.PI*2
+let phi = Math.acos((Math.random()*2)-1)
+
+x = r*Math.sin(phi)*Math.cos(theta)
+y = r*Math.sin(phi)*Math.sin(theta)
+z = r*Math.cos(phi)
+
+}
+
+if(type==="galaxy"){
+
+let r = Math.random()*3
+let angle = r*3
+
+x = Math.cos(angle)*r
+y = (Math.random()-0.5)*0.5
+z = Math.sin(angle)*r
+
+}
+
+if(type==="heart"){
+
+let t = Math.random()*Math.PI*2
+
+x = 16*Math.pow(Math.sin(t),3)/10
+y = (13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t))/10
+z = (Math.random()-0.5)
+
+}
+
+if(type==="spiral"){
+
+let t = i*0.05
+
+x = Math.cos(t)*t*0.03
+y = (Math.random()-0.5)*0.2
+z = Math.sin(t)*t*0.03
+
+}
+
+if(type==="cube"){
+
+x = (Math.random()-0.5)*4
+y = (Math.random()-0.5)*4
+z = (Math.random()-0.5)*4
+
+}
+
+positions[i*3] = x
+positions[i*3+1] = y
+positions[i*3+2] = z
 
 }
 
 geometry.setAttribute(
-'position',
+"position",
 new THREE.BufferAttribute(positions,3)
 )
+
+geometry.attributes.position.needsUpdate = true
+
+}
+
+generatePattern("sphere")
 
 const material = new THREE.PointsMaterial({
 size:0.03,
@@ -95,7 +173,6 @@ color:0x00ffff
 })
 
 const particles = new THREE.Points(geometry,material)
-
 scene.add(particles)
 
 
@@ -103,15 +180,22 @@ scene.add(particles)
 
 document.getElementById("colorPicker")
 .addEventListener("input",e=>{
-
 material.color.set(e.target.value)
-
 })
 
 
-/* ANIMACION */
+/* PATTERN */
+
+document.getElementById("pattern")
+.addEventListener("change",e=>{
+generatePattern(e.target.value)
+})
+
+
+/* ANIMATION */
 
 let scale = 1
+let disperse = 0
 
 function animate(){
 
@@ -137,7 +221,7 @@ document.body.requestFullscreen()
 }
 
 
-/* CAMARA */
+/* CAMERA */
 
 const video = document.getElementById("video")
 
@@ -145,12 +229,9 @@ navigator.mediaDevices.getUserMedia({video:true})
 .then(stream=>{
 video.srcObject = stream
 })
-.catch(err=>{
-console.log("Error cámara:",err)
-})
 
 
-/* MEDIAPIPE HANDS */
+/* MEDIAPIPE */
 
 const hands = new Hands({
 locateFile:(file)=>{
@@ -165,34 +246,34 @@ minDetectionConfidence:0.6,
 minTrackingConfidence:0.6
 })
 
+
 hands.onResults(results=>{
 
-if(results.multiHandLandmarks && results.multiHandLandmarks.length > 0){
+if(results.multiHandLandmarks && results.multiHandLandmarks.length>0){
 
 const lm = results.multiHandLandmarks[0]
 
-// pulgar
 const thumb = lm[4]
-
-// indice
 const index = lm[8]
 
-// distancia
-const dx = thumb.x - index.x
-const dy = thumb.y - index.y
+const dx = thumb.x-index.x
+const dy = thumb.y-index.y
 
-const distance = Math.sqrt(dx*dx + dy*dy)
+const dist = Math.sqrt(dx*dx+dy*dy)
 
-scale = 0.5 + distance * 20
+/* SCALE */
 
-console.log("Distancia gesto:",distance)
+scale = 0.5 + dist*15
+
+/* DISPERSION */
+
+particles.rotation.x = dist*2
+particles.rotation.z = dist*2
 
 }
 
 })
 
-
-/* LOOP CAMARA */
 
 const cam = new Camera(video,{
 onFrame: async ()=>{
