@@ -1,432 +1,292 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>¿Cuánto me conoces?</title>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Nunito', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #fdf2f4;
-            color: #333;
-            padding: 20px;
-            box-sizing: border-box;
-            text-align: center;
-        }
+<meta charset="UTF-8">
+<title>Advanced 3D Particle Gesture System</title>
 
-        h1 {
-            font-family: 'Caveat', cursive;
-            font-size: 3.5rem;
-            color: #d11124;
-            margin-bottom: 10px;
-            line-height: 1;
-        }
+<style>
 
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 20px rgba(209, 17, 36, 0.1);
-            max-width: 400px;
-            width: 100%;
-        }
+body{
+margin:0;
+overflow:hidden;
+background:#050505;
+font-family:Arial;
+}
 
-        /* Vistas */
-        #setup-view, #quiz-view, #game-view { display: none; }
-        .active-view { display: block !important; }
+#ui{
+position:absolute;
+top:15px;
+left:15px;
+padding:15px;
+border-radius:12px;
+background:rgba(0,0,0,0.45);
+backdrop-filter:blur(12px);
+color:white;
+width:180px;
+}
 
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0 20px;
-            border: 2px solid #ffb3ba;
-            border-radius: 10px;
-            font-size: 1rem;
-            box-sizing: border-box;
-            outline: none;
-        }
+label{
+font-size:13px;
+opacity:0.8;
+}
 
-        input[type="text"]:focus { border-color: #d11124; }
+select,input,button{
+width:100%;
+margin-top:6px;
+margin-bottom:10px;
+padding:6px;
+border-radius:6px;
+border:none;
+}
 
-        button {
-            width: 100%;
-            padding: 15px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            background-color: #d11124;
-            color: white;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: transform 0.1s, background-color 0.2s;
-            margin-top: 10px;
-        }
+button{
+cursor:pointer;
+background:#ffffff;
+}
 
-        button:active { transform: scale(0.98); }
-        button:hover { background-color: #a80e1d; }
+</style>
 
-        #link-container {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            word-break: break-all;
-            font-size: 0.9rem;
-            display: none;
-        }
-
-        /* Estilos del Cuestionario */
-        .question-block {
-            margin-bottom: 25px;
-            text-align: left;
-        }
-        .question-block p { font-weight: bold; font-size: 1.1rem; color: #d11124; }
-        .option-label {
-            display: block;
-            background: #fdf2f4;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 8px;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: border-color 0.2s;
-        }
-        .option-label:hover { border-color: #ffb3ba; }
-        input[type="radio"] { margin-right: 10px; transform: scale(1.2); }
-
-        /* Estilos del Juego Tres en Raya */
-        .board {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            width: 100%;
-            aspect-ratio: 1;
-            margin: 20px auto;
-            font-family: 'Caveat', cursive;
-        }
-
-        .cell {
-            border: 5px solid #d11124;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 4rem;
-            color: #d11124;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .cell:nth-child(1), .cell:nth-child(2), .cell:nth-child(3) { border-top: none; }
-        .cell:nth-child(7), .cell:nth-child(8), .cell:nth-child(9) { border-bottom: none; }
-        .cell:nth-child(1), .cell:nth-child(4), .cell:nth-child(7) { border-left: none; }
-        .cell:nth-child(3), .cell:nth-child(6), .cell:nth-child(9) { border-right: none; }
-
-        .symbol { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        @keyframes popIn {
-            0% { transform: scale(0) rotate(-20deg); opacity: 0; }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-
-        #game-status {
-            font-family: 'Caveat', cursive;
-            font-size: 2rem;
-            color: #d11124;
-            margin-bottom: 15px;
-            min-height: 40px;
-        }
-    </style>
 </head>
+
 <body>
 
-    <div id="setup-view" class="container">
-        <h1>Crea tu reto</h1>
-        <p>Ingresa tus favoritos y envíale el link a tu pareja.</p>
-        
-        <label>¿Cuál es tu color favorito?</label>
-        <input type="text" id="color" placeholder="Ej. Negro" required>
-        
-        <label>¿Cuál es tu comida favorita?</label>
-        <input type="text" id="food" placeholder="Ej. Pizza" required>
-        
-        <label>¿Cuál es tu fruta favorita?</label>
-        <input type="text" id="fruit" placeholder="Ej. Fresa" required>
-        
-        <button onclick="generateLink()">Generar Link</button>
-        
-        <div id="link-container">
-            <p style="margin:0 0 10px; font-weight:bold;">¡Listo! Copia este enlace y envíaselo:</p>
-            <textarea id="share-link" readonly style="width:100%; height:60px; resize:none; font-size:0.8rem; padding:5px;"></textarea>
-            <button onclick="copyLink()" style="padding:10px; font-size:1rem; margin-top:5px;">Copiar Link</button>
-        </div>
-    </div>
+<div id="ui">
 
-    <div id="quiz-view" class="container">
-        <h1>¿Me conoces?</h1>
-        <p>Responde correctamente para tener ventaja en el juego final...</p>
-        <div id="quiz-form"></div>
-        <button onclick="checkAnswers()">Ir al Juego</button>
-    </div>
+<label>Color</label>
+<input type="color" id="colorPicker" value="#ffffff">
 
-    <div id="game-view" class="container">
-        <h1>Tres en Raya</h1>
-        <div id="game-status">Tu turno (X)</div>
-        <div class="board" id="board">
-            <div class="cell" data-index="0"></div><div class="cell" data-index="1"></div><div class="cell" data-index="2"></div>
-            <div class="cell" data-index="3"></div><div class="cell" data-index="4"></div><div class="cell" data-index="5"></div>
-            <div class="cell" data-index="6"></div><div class="cell" data-index="7"></div><div class="cell" data-index="8"></div>
-        </div>
-        <button id="restart-btn" onclick="resetGame()" style="display:none;">Volver a intentar</button>
-    </div>
+<label>Patrón</label>
+<select id="pattern">
 
-    <script>
-        // --- BASE DE DATOS DE DISTRACTORES ---
-        const fakeColors = ["Azul", "Rojo", "Verde", "Amarillo", "Morado", "Naranja", "Gris", "Celeste"];
-        const fakeFoods = ["Hamburguesa", "Sushi", "Tacos", "Pasta", "Ensalada", "Ceviche", "Pollo frito"];
-        const fakeFruits = ["Plátano", "Manzana", "Naranja", "Uva", "Mango", "Sandía", "Melón", "Pera"];
+<option value="sphere">Sphere</option>
+<option value="galaxy">Galaxy</option>
+<option value="heart">Heart</option>
+<option value="explosion">Explosion</option>
 
-        let realAnswers = {};
-        let partnerGetsToWin = false;
+</select>
 
-        // --- SISTEMA DE NAVEGACIÓN Y CARGA ---
-        window.onload = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const encodedData = urlParams.get('d');
+<button onclick="fullscreen()">Fullscreen</button>
 
-            if (encodedData) {
-                // Hay datos en la URL: Mostrar modo pareja (Quiz)
-                try {
-                    const data = JSON.parse(decodeURIComponent(atob(encodedData)));
-                    buildQuiz(data);
-                    showView('quiz-view');
-                } catch (e) {
-                    alert("El enlace parece estar roto. Crea uno nuevo.");
-                    showView('setup-view');
-                }
-            } else {
-                // No hay datos: Mostrar modo creador
-                showView('setup-view');
-            }
-        };
+</div>
 
-        function showView(viewId) {
-            document.querySelectorAll('.container').forEach(v => v.classList.remove('active-view'));
-            document.getElementById(viewId).classList.add('active-view');
-        }
+<video id="video" autoplay playsinline style="display:none"></video>
 
-        // --- FUNCIONES DEL CREADOR (VISTA 1) ---
-        function getRandomFakes(arr, amount) {
-            let shuffled = [...arr].sort(() => 0.5 - Math.random());
-            return shuffled.slice(0, amount);
-        }
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
 
-        function generateLink() {
-            const c = document.getElementById('color').value.trim();
-            const f = document.getElementById('food').value.trim();
-            const fr = document.getElementById('fruit').value.trim();
+<script>
 
-            if (!c || !f || !fr) return alert("Por favor, llena todos los campos.");
+// escena
 
-            // Generar opciones falsas y mezclarlas con las reales
-            const data = {
-                q1: { r: c, opts: [c, ...getRandomFakes(fakeColors, 2)].sort(() => 0.5 - Math.random()) },
-                q2: { r: f, opts: [f, ...getRandomFakes(fakeFoods, 2)].sort(() => 0.5 - Math.random()) },
-                q3: { r: fr, opts: [fr, ...getRandomFakes(fakeFruits, 2)].sort(() => 0.5 - Math.random()) }
-            };
+const scene = new THREE.Scene()
 
-            const encoded = btoa(encodeURIComponent(JSON.stringify(data)));
-            const shareUrl = window.location.origin + window.location.pathname + "?d=" + encoded;
-            
-            document.getElementById('share-link').value = shareUrl;
-            document.getElementById('link-container').style.display = 'block';
-        }
+const camera = new THREE.PerspectiveCamera(
+75,
+window.innerWidth/window.innerHeight,
+0.1,
+1000
+)
 
-        function copyLink() {
-            const link = document.getElementById('share-link');
-            link.select();
-            document.execCommand('copy');
-            alert("¡Enlace copiado! Pégalo en el chat con tu pareja.");
-        }
+camera.position.z = 6
 
-        // --- FUNCIONES DEL CUESTIONARIO (VISTA 2) ---
-        function buildQuiz(data) {
-            realAnswers = { q1: data.q1.r, q2: data.q2.r, q3: data.q3.r };
-            const container = document.getElementById('quiz-form');
-            
-            const questions = [
-                { id: 'q1', text: '1. ¿Cuál es mi color favorito?', opts: data.q1.opts },
-                { id: 'q2', text: '2. ¿Cuál es mi comida favorita?', opts: data.q2.opts },
-                { id: 'q3', text: '3. ¿Cuál es mi fruta favorita?', opts: data.q3.opts }
-            ];
+const renderer = new THREE.WebGLRenderer({antialias:true})
 
-            let html = '';
-            questions.forEach(q => {
-                html += `<div class="question-block"><p>${q.text}</p>`;
-                q.opts.forEach(opt => {
-                    html += `<label class="option-label">
-                                <input type="radio" name="${q.id}" value="${opt}"> ${opt}
-                             </label>`;
-                });
-                html += `</div>`;
-            });
-            container.innerHTML = html;
-        }
+renderer.setSize(window.innerWidth,window.innerHeight)
 
-        function checkAnswers() {
-            const a1 = document.querySelector('input[name="q1"]:checked');
-            const a2 = document.querySelector('input[name="q2"]:checked');
-            const a3 = document.querySelector('input[name="q3"]:checked');
+document.body.appendChild(renderer.domElement)
 
-            if (!a1 || !a2 || !a3) return alert("Responde todas las preguntas antes de avanzar.");
 
-            const correct = (a1.value === realAnswers.q1) && 
-                            (a2.value === realAnswers.q2) && 
-                            (a3.value === realAnswers.q3);
-            
-            partnerGetsToWin = correct; // Aquí definimos la dificultad del bot
-            showView('game-view');
-        }
+// partículas
 
-        // --- LÓGICA DEL TRES EN RAYA Y LA IA (VISTA 3) ---
-        let board = ["", "", "", "", "", "", "", "", ""];
-        let isPlayerTurn = true;
-        let gameActive = true;
-        const HUMAN = "X";
-        const AI = "O"; // Lo renderizaremos como ♥
-        
-        const cells = document.querySelectorAll('.cell');
-        const statusText = document.getElementById('game-status');
-        const restartBtn = document.getElementById('restart-btn');
+const particleCount = 5000
 
-        cells.forEach(cell => cell.addEventListener('click', onCellClick));
+let geometry = new THREE.BufferGeometry()
 
-        function onCellClick(e) {
-            if (!isPlayerTurn || !gameActive) return;
-            const index = e.target.getAttribute('data-index');
-            if (board[index] !== "") return;
+let positions = new Float32Array(particleCount*3)
 
-            makeMove(index, HUMAN);
-            
-            if (checkWinResult(board, HUMAN)) {
-                endGame("¡Me conoces bien! ¡Ganaste! ❤️");
-            } else if (board.indexOf("") === -1) {
-                endGame("Es un empate... casi.");
-            } else {
-                isPlayerTurn = false;
-                statusText.innerText = "Pensando...";
-                setTimeout(aiTurn, 600); // Pequeño retraso para que parezca que piensa
-            }
-        }
+function generatePattern(type){
 
-        function makeMove(index, player) {
-            board[index] = player;
-            const cell = document.querySelector(`.cell[data-index="${index}"]`);
-            cell.innerHTML = `<span class="symbol">${player === HUMAN ? "X" : "♥"}</span>`;
-        }
+for(let i=0;i<particleCount;i++){
 
-        function aiTurn() {
-            if (!gameActive) return;
+let x,y,z
 
-            let bestMove;
-            if (partnerGetsToWin) {
-                // IA Tonta: Escoge el primer hueco que encuentra (se deja ganar)
-                bestMove = board.indexOf(""); 
-            } else {
-                // IA Invencible: Usa algoritmo Minimax
-                bestMove = minimax(board, AI).index;
-            }
+if(type==="sphere"){
 
-            makeMove(bestMove, AI);
+let r = 2*Math.random()
 
-            if (checkWinResult(board, AI)) {
-                endGame("No me conoces lo suficiente. ¡Perdiste! 💔");
-            } else if (board.indexOf("") === -1) {
-                endGame("Es un empate... casi.");
-            } else {
-                isPlayerTurn = true;
-                statusText.innerText = "Tu turno (X)";
-            }
-        }
+let theta = Math.random()*Math.PI*2
+let phi = Math.acos((Math.random()*2)-1)
 
-        function endGame(message) {
-            gameActive = false;
-            statusText.innerText = message;
-            restartBtn.style.display = "block";
-        }
+x = r*Math.sin(phi)*Math.cos(theta)
+y = r*Math.sin(phi)*Math.sin(theta)
+z = r*Math.cos(phi)
 
-        function resetGame() {
-            board = ["", "", "", "", "", "", "", "", ""];
-            isPlayerTurn = true;
-            gameActive = true;
-            statusText.innerText = "Tu turno (X)";
-            restartBtn.style.display = "none";
-            cells.forEach(cell => cell.innerHTML = "");
-        }
+}
 
-        // --- ALGORITMO MINIMAX PARA IA INVENCIBLE ---
-        const winCombos = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], 
-            [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]
-        ];
+if(type==="galaxy"){
 
-        function checkWinResult(newBoard, player) {
-            return winCombos.some(combo => 
-                newBoard[combo[0]] === player && 
-                newBoard[combo[1]] === player && 
-                newBoard[combo[2]] === player
-            );
-        }
+let angle = i*0.1
+let radius = Math.random()*2
 
-        function minimax(newBoard, player) {
-            let emptyCells = newBoard.map((val, i) => val === "" ? i : null).filter(val => val !== null);
+x = Math.cos(angle)*radius
+y = (Math.random()-0.5)*0.5
+z = Math.sin(angle)*radius
 
-            if (checkWinResult(newBoard, HUMAN)) return { score: -10 };
-            else if (checkWinResult(newBoard, AI)) return { score: 10 };
-            else if (emptyCells.length === 0) return { score: 0 };
+}
 
-            let moves = [];
-            for (let i = 0; i < emptyCells.length; i++) {
-                let move = {};
-                move.index = emptyCells[i];
-                newBoard[emptyCells[i]] = player;
+if(type==="heart"){
 
-                if (player === AI) {
-                    let result = minimax(newBoard, HUMAN);
-                    move.score = result.score;
-                } else {
-                    let result = minimax(newBoard, AI);
-                    move.score = result.score;
-                }
+let t = Math.random()*Math.PI*2
 
-                newBoard[emptyCells[i]] = "";
-                moves.push(move);
-            }
+x = 0.16*Math.pow(Math.sin(t),3)*10
+y = (0.13*Math.cos(t)-0.05*Math.cos(2*t)-0.02*Math.cos(3*t)-0.01*Math.cos(4*t))*10
+z = (Math.random()-0.5)*0.5
 
-            let bestMove;
-            if (player === AI) {
-                let bestScore = -10000;
-                for (let i = 0; i < moves.length; i++) {
-                    if (moves[i].score > bestScore) {
-                        bestScore = moves[i].score;
-                        bestMove = i;
-                    }
-                }
-            } else {
-                let bestScore = 10000;
-                for (let i = 0; i < moves.length; i++) {
-                    if (moves[i].score < bestScore) {
-                        bestScore = moves[i].score;
-                        bestMove = i;
-                    }
-                }
-            }
-            return moves[bestMove];
-        }
-    </script>
+}
+
+if(type==="explosion"){
+
+x = (Math.random()-0.5)*6
+y = (Math.random()-0.5)*6
+z = (Math.random()-0.5)*6
+
+}
+
+positions[i*3] = x
+positions[i*3+1] = y
+positions[i*3+2] = z
+
+}
+
+geometry.setAttribute(
+'position',
+new THREE.BufferAttribute(positions,3)
+)
+
+}
+
+generatePattern("sphere")
+
+const material = new THREE.PointsMaterial({
+size:0.03,
+color:0xffffff
+})
+
+const particles = new THREE.Points(geometry,material)
+
+scene.add(particles)
+
+
+// color
+
+document.getElementById("colorPicker")
+.addEventListener("input",e=>{
+material.color.set(e.target.value)
+})
+
+
+// patrones
+
+document.getElementById("pattern")
+.addEventListener("change",e=>{
+generatePattern(e.target.value)
+})
+
+
+// animación
+
+let scale = 1
+
+function animate(){
+
+requestAnimationFrame(animate)
+
+particles.scale.set(scale,scale,scale)
+
+particles.rotation.y += 0.002
+
+renderer.render(scene,camera)
+
+}
+
+animate()
+
+
+// fullscreen
+
+function fullscreen(){
+
+document.body.requestFullscreen()
+
+}
+
+
+// GESTOS
+
+const video = document.getElementById("video")
+
+const hands = new Hands({
+locateFile:(file)=>{
+return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+}
+})
+
+hands.setOptions({
+maxNumHands:1,
+modelComplexity:1,
+minDetectionConfidence:0.7,
+minTrackingConfidence:0.7
+})
+
+hands.onResults(results=>{
+
+if(results.multiHandLandmarks.length){
+
+const lm = results.multiHandLandmarks[0]
+
+const dx = lm[4].x - lm[8].x
+const dy = lm[4].y - lm[8].y
+
+const distance = Math.sqrt(dx*dx + dy*dy)
+
+scale = 1 + distance*5
+
+}
+
+})
+
+const cam = new Camera(video,{
+onFrame: async ()=>{
+await hands.send({image:video})
+},
+width:640,
+height:480
+})
+
+cam.start()
+
+
+// resize
+
+window.addEventListener("resize",()=>{
+
+camera.aspect =
+window.innerWidth/window.innerHeight
+
+camera.updateProjectionMatrix()
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+)
+
+})
+
+</script>
+
 </body>
-</html>
+</html>            
+            
+              
+        
